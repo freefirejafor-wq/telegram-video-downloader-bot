@@ -3,20 +3,26 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: StreamBox — Movie & Anime Streaming API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: anime
+    description: Anime operations via Jikan/MAL
+  - name: movies
+    description: Movie operations via TMDB
+  - name: watchlist
+    description: User watchlist management
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +30,483 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── ANIME ──────────────────────────────────────────────────────────────────
+  /anime/trending:
+    get:
+      operationId: getAnimeTrending
+      tags: [anime]
+      summary: Get currently airing / trending anime
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: List of trending anime
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnimeListResponse"
+
+  /anime/top:
+    get:
+      operationId: getAnimeTop
+      tags: [anime]
+      summary: Get top rated anime
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: genre
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of top anime
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnimeListResponse"
+
+  /anime/search:
+    get:
+      operationId: searchAnime
+      tags: [anime]
+      summary: Search anime by title
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: genre
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnimeListResponse"
+
+  /anime/genres:
+    get:
+      operationId: getAnimeGenres
+      tags: [anime]
+      summary: Get all anime genres
+      responses:
+        "200":
+          description: List of genres
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenreListResponse"
+
+  /anime/{id}:
+    get:
+      operationId: getAnimeById
+      tags: [anime]
+      summary: Get anime details by MAL ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Anime detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnimeDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /anime/episodes:
+    get:
+      operationId: getAnimeEpisodes
+      tags: [anime]
+      summary: Get episodes list for an anime
+      parameters:
+        - name: malId
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+      responses:
+        "200":
+          description: Episode list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpisodeListResponse"
+
+  /anime/embed:
+    get:
+      operationId: getAnimeEmbed
+      tags: [anime]
+      summary: Get embed URL for anime episode
+      parameters:
+        - name: malId
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: ep
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: dubbed
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Embed info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmbedResponse"
+
+  # ── MOVIES ─────────────────────────────────────────────────────────────────
+  /movies/trending:
+    get:
+      operationId: getMoviesTrending
+      tags: [movies]
+      summary: Get trending movies
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+      responses:
+        "200":
+          description: Trending movies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieListResponse"
+
+  /movies/top:
+    get:
+      operationId: getMoviesTop
+      tags: [movies]
+      summary: Get top rated movies
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: genre
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Top movies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieListResponse"
+
+  /movies/search:
+    get:
+      operationId: searchMovies
+      tags: [movies]
+      summary: Search movies by title
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieListResponse"
+
+  /movies/genres:
+    get:
+      operationId: getMovieGenres
+      tags: [movies]
+      summary: Get all movie genres
+      responses:
+        "200":
+          description: Genre list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenreListResponse"
+
+  /movies/{id}:
+    get:
+      operationId: getMovieById
+      tags: [movies]
+      summary: Get movie details by TMDB ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Movie detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /movies/{id}/embed:
+    get:
+      operationId: getMovieEmbed
+      tags: [movies]
+      summary: Get embed URL for a movie
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Embed info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmbedResponse"
+
+  # ── WATCHLIST ───────────────────────────────────────────────────────────────
+  /watchlist:
+    get:
+      operationId: getWatchlist
+      tags: [watchlist]
+      summary: Get user watchlist (session-based)
+      responses:
+        "200":
+          description: Watchlist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WatchlistItem"
+    post:
+      operationId: addToWatchlist
+      tags: [watchlist]
+      summary: Add item to watchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WatchlistInput"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistItem"
+
+  /watchlist/{itemId}:
+    delete:
+      operationId: removeFromWatchlist
+      tags: [watchlist]
+      summary: Remove item from watchlist
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Removed
+
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+      required: [error]
+
+    # ── Anime schemas ──
+    AnimeItem:
+      type: object
+      properties:
+        mal_id: { type: integer }
+        title: { type: string }
+        title_english: { type: ["string", "null"] }
+        synopsis: { type: ["string", "null"] }
+        poster: { type: ["string", "null"] }
+        score: { type: ["number", "null"] }
+        episodes: { type: ["integer", "null"] }
+        status: { type: string }
+        year: { type: ["integer", "null"] }
+        genres: { type: array, items: { type: string } }
+        type: { type: ["string", "null"] }
+      required: [mal_id, title, status, genres]
+
+    AnimeDetail:
+      type: object
+      properties:
+        mal_id: { type: integer }
+        title: { type: string }
+        title_english: { type: ["string", "null"] }
+        synopsis: { type: ["string", "null"] }
+        poster: { type: ["string", "null"] }
+        trailer_url: { type: ["string", "null"] }
+        score: { type: ["number", "null"] }
+        rank: { type: ["integer", "null"] }
+        episodes: { type: ["integer", "null"] }
+        status: { type: string }
+        year: { type: ["integer", "null"] }
+        genres: { type: array, items: { type: string } }
+        studios: { type: array, items: { type: string } }
+        type: { type: ["string", "null"] }
+        duration: { type: ["string", "null"] }
+        rating: { type: ["string", "null"] }
+      required: [mal_id, title, status, genres, studios]
+
+    AnimeListResponse:
+      type: object
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/AnimeItem" } }
+        total: { type: integer }
+        page: { type: integer }
+        hasNext: { type: boolean }
+      required: [items, total, page, hasNext]
+
+    EpisodeItem:
+      type: object
+      properties:
+        number: { type: integer }
+        title: { type: ["string", "null"] }
+        aired: { type: ["string", "null"] }
+        filler: { type: boolean }
+      required: [number, filler]
+
+    EpisodeListResponse:
+      type: object
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/EpisodeItem" } }
+        page: { type: integer }
+        hasNext: { type: boolean }
+      required: [items, page, hasNext]
+
+    EmbedResponse:
+      type: object
+      properties:
+        embedUrl: { type: string }
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              label: { type: string }
+              url: { type: string }
+            required: [label, url]
+      required: [embedUrl, sources]
+
+    # ── Movie schemas ──
+    MovieItem:
+      type: object
+      properties:
+        tmdb_id: { type: integer }
+        title: { type: string }
+        overview: { type: ["string", "null"] }
+        poster: { type: ["string", "null"] }
+        backdrop: { type: ["string", "null"] }
+        rating: { type: ["number", "null"] }
+        year: { type: ["integer", "null"] }
+        genres: { type: array, items: { type: string } }
+      required: [tmdb_id, title, genres]
+
+    MovieDetail:
+      type: object
+      properties:
+        tmdb_id: { type: integer }
+        title: { type: string }
+        overview: { type: ["string", "null"] }
+        poster: { type: ["string", "null"] }
+        backdrop: { type: ["string", "null"] }
+        rating: { type: ["number", "null"] }
+        year: { type: ["integer", "null"] }
+        runtime: { type: ["integer", "null"] }
+        genres: { type: array, items: { type: string } }
+        cast: { type: array, items: { type: string } }
+        trailer_url: { type: ["string", "null"] }
+        imdb_id: { type: ["string", "null"] }
+      required: [tmdb_id, title, genres, cast]
+
+    MovieListResponse:
+      type: object
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/MovieItem" } }
+        total: { type: integer }
+        page: { type: integer }
+        hasNext: { type: boolean }
+      required: [items, total, page, hasNext]
+
+    # ── Genre ──
+    GenreItem:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+      required: [id, name]
+
+    GenreListResponse:
+      type: object
+      properties:
+        genres: { type: array, items: { $ref: "#/components/schemas/GenreItem" } }
+      required: [genres]
+
+    # ── Watchlist ──
+    WatchlistItem:
+      type: object
+      properties:
+        id: { type: integer }
+        contentId: { type: integer }
+        contentType: { type: string, enum: [anime, movie] }
+        title: { type: string }
+        poster: { type: ["string", "null"] }
+        score: { type: ["number", "null"] }
+        addedAt: { type: string }
+      required: [id, contentId, contentType, title, addedAt]
+
+    WatchlistInput:
+      type: object
+      properties:
+        contentId: { type: integer }
+        contentType: { type: string, enum: [anime, movie] }
+        title: { type: string }
+        poster: { type: ["string", "null"] }
+        score: { type: ["number", "null"] }
+      required: [contentId, contentType, title]
